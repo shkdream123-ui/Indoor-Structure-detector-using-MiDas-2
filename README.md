@@ -7,6 +7,33 @@ The goal of this project is to detect structural elements such as **walls and co
 
 ---
 
+## 🆕 Version 2.1 Update
+
+This project has been further extended to **version 2.1**, introducing a new approach for improving structural inference from depth.
+
+### 🔹 Depth Contour-based Structural Reasoning
+
+The previous segmentation approach relied on grouping pixels based on local similarity, which sometimes led to ambiguity in structural interpretation.
+
+In version 2.1:
+
+- The depth map is **quantized into multiple levels (contour-like regions)**
+- Structural cues are extracted from:
+  - **distribution of contour regions**
+  - **area change patterns**
+  - **centroid convergence behavior**
+
+This allows the system to:
+
+- Capture **global geometric tendencies** instead of relying purely on local clustering
+- Better distinguish between:
+  - **planar structures (walls)** → linear distribution
+  - **corner structures** → converging, peak-centered distribution
+
+👉 This significantly reduces ambiguity present in the previous segmentation-based approach.
+
+---
+
 ## 🚀 Key Improvements
 
 ### 1. Direction Estimation using von Mises Distribution
@@ -32,16 +59,16 @@ In this improved version:
 - Model distributions using von Mises mixture
 - Estimate structural likelihood (e.g., Manhattan alignment)
 
-#### 🔹 Local (Segmentation-based)
-- Apply segmentation on the depth map
+#### 🔹 Local (Segmentation / Contour-based)
+- Apply segmentation and contour-level quantization on the depth map
 - Analyze:
   - segment geometry
-  - slope
-  - variance
-- Extract structural candidates from segmented regions
+  - contour distribution
+  - centroid convergence
+- Extract structural candidates from both local regions and global depth structure
 
 #### 🔹 Fusion Strategy
-- Combine **global orientation cues** with **local segment-level analysis**
+- Combine **global orientation cues** with **local structural analysis**
 - Use a **conservative fusion strategy** to improve robustness
 
 ---
@@ -55,31 +82,34 @@ Instead of relying directly on segmentation for point cloud generation:
 - Apply **RANSAC line fitting**
 
 #### For WALL:
-- Single dominant line estimation
+- Single dominant line estimation  
+- Produces **stable and consistent point cloud**
 
 #### For CORNER:
-- Two-line RANSAC
-- Enforce **Manhattan World assumption (orthogonality)**
-- Compute intersection → corner point
+- Detect corner using contour + curvature cues
+- Construct L-shape using:
+  - dominant direction
+  - orthogonal constraint
 
-👉 This results in a **geometry-consistent point cloud representation**
+👉 Aims to produce a **geometry-consistent point cloud representation**
 
 ---
 
 ## 🧱 Pipeline
 
-
-
+<!-- Insert pipeline image here -->
+<!-- ![Pipeline](./assets/pipeline.png) -->
 
 ---
 
-## 📊 Results & Observations
+## 📊 Results & Observations (v2.1)
 
 ### ✔ Strengths
 - Stable direction estimation via von Mises modeling
 - Improved robustness through global-local fusion
-- Geometry-aware reconstruction using RANSAC
-- Conservative fusion reduces catastrophic failure cases
+- Depth contour reasoning reduces ambiguity
+- **Wall detection and reconstruction are highly stable**
+- Conservative fusion reduces catastrophic failures
 
 ---
 
@@ -90,36 +120,50 @@ Instead of relying directly on segmentation for point cloud generation:
 - Corner detection degrades
 
 #### 2. Sensitivity to lighting conditions
-- :contentReference[oaicite:0]{index=0} is affected by brightness and contrast
-- Depth quality degradation impacts:
+- Depth estimation quality is affected by brightness and contrast
+- Impacts:
   - segmentation
-  - corner detection
+  - contour extraction
+  - structural inference
 
-#### 3. Segmentation instability
-- Highly dependent on depth quality
-- Inconsistent segment boundaries in challenging environments
+#### 3. Corner Geometry Fitting
+- Corner detection has improved,
+- but **point cloud reconstruction for corners is still unstable**
+
+Specifically:
+- L-shape fitting is not always consistent
+- Current methods may:
+  - fail under noise
+  - produce inaccurate geometry
+
+👉 **Corner detection ≠ reliable corner reconstruction**
 
 ---
 
 ## 🔧 Future Work
 
-### 1. Robust Segmentation
-- Improve stability under varying lighting conditions
-- Introduce more advanced segmentation techniques
+### 1. Robust L-shape Fitting
+- Develop a more stable method for:
+  - corner geometry reconstruction
+  - L-shape fitting aligned with depth structure
 
-### 2. Higher-level Structural Reasoning
-- Compare:
-  - segmentation patterns
-  - edge distributions
-- Move toward **higher-order structural inference**
+### 2. Contour-based Structural Modeling
+- Extend contour analysis to:
+  - multi-peak structures
+  - corridor-like environments
 
-### 3. Learning-based Extension
+### 3. Adaptive Geometric Constraints
+- Introduce constraints based on:
+  - spatial consistency
+  - indoor structural priors
+
+### 4. Learning-based Extension
 - Integrate learning-based models for:
   - structure classification
-  - geometric consistency validation
+  - geometric validation
 
-### 4. 3D Mapping & Reconstruction
-- Extend point cloud output toward:
+### 5. 3D Mapping & Reconstruction
+- Extend toward:
   - SLAM
   - indoor mapping
   - full 3D reconstruction
@@ -128,10 +172,19 @@ Instead of relying directly on segmentation for point cloud generation:
 
 ## 🎯 Conclusion
 
-This project transitions from a **purely heuristic, histogram-based approach** to a more structured pipeline that combines:
+This project evolves from a **histogram-based heuristic system** into a more structured framework combining:
 
-- probabilistic orientation modeling (von Mises)
-- local geometric reasoning (segmentation)
-- robust model fitting (RANSAC)
+- probabilistic modeling (von Mises)
+- contour-based structural reasoning
+- geometric model fitting (RANSAC)
 
-The result is a more stable and extensible framework for indoor structure understanding, with clear potential for future expansion into full 3D spatial reasoning systems.
+With the introduction of **depth contour-based analysis (v2.1)**:
+
+- Structural classification is more stable  
+- Wall reconstruction is reliable  
+
+However:
+
+- **Corner reconstruction remains an open challenge**,  
+highlighting the need for more advanced geometric fitting strategies.
+
